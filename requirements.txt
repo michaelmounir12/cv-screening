@@ -12,6 +12,9 @@ sqlalchemy[asyncio]==2.0.23
 celery==5.3.4
 redis==5.0.1
 
+# NLP
+spacy==3.7.2
+
 # AI/ML
 transformers==4.35.2
 sentence-transformers==2.2.2

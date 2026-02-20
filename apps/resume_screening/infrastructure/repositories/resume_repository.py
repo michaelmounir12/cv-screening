@@ -44,6 +44,14 @@ class ResumeRepository:
         return resume
     
     @staticmethod
+    def update_extracted_skills(resume_id: UUID, skills: list) -> Optional[Resume]:
+        resume = ResumeRepository.get_by_id(resume_id)
+        if resume:
+            resume.extracted_skills = skills
+            resume.save(update_fields=['extracted_skills'])
+        return resume
+    
+    @staticmethod
     def update_embedding(resume_id: UUID, embedding: list) -> Optional[Resume]:
         """Update embedding for a Resume."""
         resume = ResumeRepository.get_by_id(resume_id)

@@ -37,11 +37,13 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'config.middleware.RequestLoggingMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'config.middleware.ExceptionHandlingMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -159,6 +161,17 @@ REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
 REDIS_PORT = int(os.getenv('REDIS_PORT', '6379'))
 REDIS_DB = int(os.getenv('REDIS_DB', '0'))
 REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
+CACHE_REDIS_DB = int(os.getenv('CACHE_REDIS_DB', '1'))
+
+# Django Cache (Redis)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': f"redis://{REDIS_HOST}:{REDIS_PORT}/{CACHE_REDIS_DB}",
+        'KEY_PREFIX': 'resume_screening',
+        'TIMEOUT': 3600,
+    }
+}
 
 # HuggingFace / Transformers Configuration
 HF_MODEL_CACHE_DIR = BASE_DIR / 'models_cache'
@@ -166,3 +179,29 @@ HF_MODEL_NAME = os.getenv('HF_MODEL_NAME', 'sentence-transformers/all-MiniLM-L6-
 
 # FAISS Configuration
 FAISS_INDEX_PATH = BASE_DIR / 'faiss_indices'
+
+# Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}

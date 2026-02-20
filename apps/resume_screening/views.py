@@ -8,16 +8,37 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.resume_screening.application.services.batch_upload_service import BatchResumeUploadService
 from apps.resume_screening.application.services.job_service import JobPostingService
 from apps.resume_screening.application.services.matching_service import MatchingService
 from apps.resume_screening.application.services.resume_upload_service import ResumeUploadService
+from apps.resume_screening.application.services.semantic_search_service import SemanticSearchService
 from apps.resume_screening.infrastructure.repositories.resume_repository import ResumeRepository
 from apps.resume_screening.serializers import (
     JobPostingCreateSerializer,
-    MatchResultSerializer,
+    JobPostingUpdateSerializer,
     ResumeDetailSerializer,
     ResumeUploadSerializer,
+    SemanticSearchSerializer,
 )
+
+
+class BatchResumeUploadView(APIView):
+    """Batch upload multiple PDF resumes."""
+    parser_classes = [MultiPartParser, FormParser]
+    
+    def post(self, request: Request) -> Response:
+        files = request.FILES.getlist("files") or request.FILES.getlist("file")
+        if not files:
+            return Response(
+                {"error": "No files provided. Use 'files' or 'file' form field(s)."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            result = BatchResumeUploadService.upload_batch(list(files))
+            return Response(result, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ResumeUploadView(APIView):
@@ -73,6 +94,7 @@ class ResumeDetailView(APIView):
             "filename": resume.filename,
             "file_path": resume.file_path,
             "raw_text": resume.raw_text,
+            "extracted_skills": resume.extracted_skills or [],
             "created_at": resume.created_at,
         })
         return Response(serializer.data)
@@ -99,6 +121,45 @@ class JobPostingCreateView(APIView):
                 {"error": "Job creation failed"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class JobPostingDetailView(APIView):
+    """Job CRUD: get, update, delete."""
+    
+    def get(self, request: Request, job_id: str) -> Response:
+        job = JobPostingService().get_job(job_id)
+        if not job:
+            return Response({"error": "Job not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(job)
+    
+    def put(self, request: Request, job_id: str) -> Response:
+        serializer = JobPostingUpdateSerializer(data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        data = serializer.validated_data
+        job = JobPostingService().update_job(
+            job_id,
+            title=data.get("title"),
+            description=data.get("description"),
+        )
+        if not job:
+            return Response({"error": "Job not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(job)
+    
+    def delete(self, request: Request, job_id: str) -> Response:
+        if not JobPostingService().delete_job(job_id):
+            return Response({"error": "Job not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class JobPostingListView(APIView):
+    """List job postings with pagination."""
+    
+    def get(self, request: Request) -> Response:
+        skip = int(request.query_params.get("skip", 0))
+        limit = min(int(request.query_params.get("limit", 50)), 100)
+        jobs = JobPostingService().list_jobs(skip=skip, limit=limit)
+        return Response({"jobs": jobs, "count": len(jobs)})
 
 
 class MatchResumesView(APIView):

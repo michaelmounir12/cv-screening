@@ -17,11 +17,15 @@ class Resume(models.Model):
     file_path = models.CharField(max_length=500)
     raw_text = models.TextField(blank=True)
     embedding = models.JSONField(null=True, blank=True)
+    extracted_skills = models.JSONField(null=True, blank=True)  # List of skill keywords
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         db_table = 'resume_screening_resumes'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['created_at']),
+        ]
     
     def __str__(self) -> str:
         return f"{self.filename} ({self.id})"
@@ -43,6 +47,9 @@ class JobPosting(models.Model):
     class Meta:
         db_table = 'resume_screening_job_postings'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['created_at']),
+        ]
     
     def __str__(self) -> str:
         return self.title

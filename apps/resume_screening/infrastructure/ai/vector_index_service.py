@@ -85,6 +85,30 @@ class VectorIndexService:
                 self._id_to_position[rid] = len(self._id_list) - 1
             self._persist()
     
+    def add_batch(self, items: List[Tuple[UUID, List[float]]]) -> None:
+        """
+        Add multiple resume embeddings in one operation. More efficient than repeated add().
+        Skips ids already in index (use add() for replace). Single persist at end.
+        """
+        if not items:
+            return
+        with INDEX_LOCK:
+            self._ensure_loaded()
+            ids_to_add = []
+            vecs = []
+            for rid, emb in items:
+                if len(emb) != self.dimension or str(rid) in self._id_to_position:
+                    continue
+                ids_to_add.append(str(rid))
+                vecs.append(emb)
+            if vecs:
+                arr = np.array(vecs, dtype=np.float32)
+                self._index.add(arr)
+                for rid in ids_to_add:
+                    self._id_list.append(rid)
+                    self._id_to_position[rid] = len(self._id_list) - 1
+                self._persist()
+    
     def _rebuild_without_and_add(self, exclude_rid: str, new_vec: np.ndarray) -> None:
         """Rebuild index without exclude_rid, then add new_vec."""
         if exclude_rid not in self._id_to_position:

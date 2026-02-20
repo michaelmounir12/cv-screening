@@ -7,6 +7,7 @@ from uuid import UUID
 from apps.resume_screening.celery_app import app
 from apps.resume_screening.infrastructure.repositories.resume_repository import ResumeRepository
 from apps.resume_screening.infrastructure.services.pdf_extraction_service import PdfTextExtractionService
+from apps.resume_screening.infrastructure.services.skill_extraction_service import SkillExtractionService
 from apps.resume_screening.application.services.embedding_generation_service import EmbeddingGenerationService
 
 logger = logging.getLogger(__name__)
@@ -48,8 +49,10 @@ def extract_resume_text_task(resume_id: str) -> dict:
             return {"status": "error", "message": "Resume not found"}
         
         raw_text = PdfTextExtractionService.extract_text(resume.file_path)
-        
         ResumeRepository.update_raw_text(UUID(resume_id), raw_text)
+        
+        skills = SkillExtractionService.extract_skills(raw_text)
+        ResumeRepository.update_extracted_skills(UUID(resume_id), skills)
         
         generate_resume_embedding_task.delay(resume_id)
         

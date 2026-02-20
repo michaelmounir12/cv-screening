@@ -43,3 +43,27 @@ class JobPostingRepository:
     @staticmethod
     def list_all(skip: int = 0, limit: int = 100) -> List[JobPosting]:
         return list(JobPosting.objects.all()[skip:skip + limit])
+    
+    @staticmethod
+    def update(job_id: UUID, *, title: str = None, description: str = None, embedding: List[float] = None) -> Optional[JobPosting]:
+        job = JobPostingRepository.get_by_id(job_id)
+        if not job:
+            return None
+        update_fields = []
+        if title is not None:
+            job.title = title
+            update_fields.append('title')
+        if description is not None:
+            job.description = description
+            update_fields.append('description')
+        if embedding is not None:
+            job.embedding = embedding
+            update_fields.append('embedding')
+        if update_fields:
+            job.save(update_fields=update_fields)
+        return job
+    
+    @staticmethod
+    def delete(job_id: UUID) -> bool:
+        deleted, _ = JobPosting.objects.filter(pk=job_id).delete()
+        return deleted > 0
