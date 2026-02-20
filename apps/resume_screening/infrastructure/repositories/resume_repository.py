@@ -44,6 +44,23 @@ class ResumeRepository:
         return resume
     
     @staticmethod
+    def update_embedding(resume_id: UUID, embedding: list) -> Optional[Resume]:
+        """Update embedding for a Resume."""
+        resume = ResumeRepository.get_by_id(resume_id)
+        if resume:
+            resume.embedding = embedding
+            resume.save(update_fields=['embedding'])
+        return resume
+    
+    @staticmethod
+    def get_by_ids(resume_ids: list) -> List[Resume]:
+        """Get resumes by list of UUIDs, preserving order."""
+        if not resume_ids:
+            return []
+        found = {str(r.id): r for r in Resume.objects.filter(id__in=resume_ids)}
+        return [found[str(rid)] for rid in resume_ids if str(rid) in found]
+    
+    @staticmethod
     def list_all(skip: int = 0, limit: int = 100) -> List[Resume]:
         """List resumes with pagination."""
         return list(Resume.objects.all()[skip:skip + limit])
