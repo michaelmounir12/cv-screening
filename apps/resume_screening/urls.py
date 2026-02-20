@@ -1,14 +1,11 @@
 """
 URLs for resume screening API.
 """
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 
-# from apps.resume_screening.views import ResumeViewSet
-
-router = DefaultRouter()
-# router.register(r'resumes', ResumeViewSet, basename='resume')
+from apps.resume_screening.views import ResumeUploadView, ResumeDetailView
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('resumes/upload/', ResumeUploadView.as_view(), name='resume-upload'),
+    path('resumes/<uuid:resume_id>/', ResumeDetailView.as_view(), name='resume-detail'),
 ]
