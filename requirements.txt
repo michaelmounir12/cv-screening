@@ -1,0 +1,33 @@
+# Django
+Django==4.2.7
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+psycopg2-binary==2.9.9
+
+# Database
+asyncpg==0.29.0
+sqlalchemy[asyncio]==2.0.23
+
+# Celery
+celery==5.3.4
+redis==5.0.1
+
+# AI/ML
+transformers==4.35.2
+sentence-transformers==2.2.2
+torch==2.1.1
+faiss-cpu==1.7.4
+numpy==1.24.3
+
+# Utilities
+python-dotenv==1.0.0
+pydantic==2.5.2
+pydantic-settings==2.1.0
+
+# Development
+pytest==7.4.3
+pytest-django==4.7.0
+pytest-asyncio==0.21.1
+black==23.12.1
+flake8==6.1.0
+mypy==1.7.1
